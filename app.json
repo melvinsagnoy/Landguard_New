@@ -2,6 +2,11 @@
   "expo": {
     "name": "Landguard",
     "slug": "Landguard",
-    "version": "1.0.0"
+    "version": "1.0.0",
+    "extra": {
+      "eas": {
+        "projectId": "706b7c57-4b5d-462c-b2fe-bf666eef6582"
+      }
+    }
   }
 }

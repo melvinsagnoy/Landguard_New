@@ -1,21 +1,9 @@
-import { StatusBar } from 'expo-status-bar';
+// App.js
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import AuthNavigator from './navigation/AuthNavigator'; // Import the AuthNavigator that contains all the screens including Home
 
 export default function App() {
   return (
-    <View style={styles.container}>
-      <Text>Open up App.js to start working on your app!</Text>
-      <StatusBar style="auto" />
-    </View>
+    <AuthNavigator /> // Render the AuthNavigator to handle navigation between the Login, Register, and Home screens
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});
