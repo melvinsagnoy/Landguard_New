@@ -1,12 +1,13 @@
 {
   "expo": {
     "name": "Landguard",
-    "slug": "Landguard",
+    "slug": "landguard-hflmfai-ld2ap-ikm-nja",
     "version": "1.0.0",
     "extra": {
       "eas": {
-        "projectId": "706b7c57-4b5d-462c-b2fe-bf666eef6582"
+        "projectId": "7019d4fc-bd25-4a4c-839a-d67d5285f7b2"
       }
-    }
+    },
+    "owner": "melvinsagnoy"
   }
 }
