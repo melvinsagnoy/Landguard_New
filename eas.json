@@ -14,5 +14,8 @@
   },
   "submit": {
     "production": {}
+  },
+  "github": {
+    "image": "easbuild/expobuild:latest"
   }
 }
