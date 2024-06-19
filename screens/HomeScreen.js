@@ -1,61 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, Image, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
-import MapView, { Marker } from 'react-native-maps';
-import * as Location from 'expo-location';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import Modal from 'react-native-modal';
 
 const HomeScreen = ({ navigation }) => {
-  const [location, setLocation] = useState(null);
-  const [errorMsg, setErrorMsg] = useState(null);
-  const [region, setRegion] = useState(null);
   const [isModalVisible, setModalVisible] = useState(false);
   const [notifications, setNotifications] = useState([]); // State for notifications
 
   useEffect(() => {
-    (async () => {
-      let { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== 'granted') {
-        setErrorMsg('Permission to access location was denied');
-        return;
-      }
-
-      let location = await Location.getCurrentPositionAsync({});
-      setLocation(location.coords);
-      setRegion({
-        latitude: location.coords.latitude,
-        longitude: location.coords.longitude,
-        latitudeDelta: 0.001,
-        longitudeDelta: 0.001,
-      });
-
-      await Location.watchPositionAsync(
-        {
-          accuracy: Location.Accuracy.High,
-          timeInterval: 1000,
-          distanceInterval: 1,
-        },
-        (newLocation) => {
-          setLocation(newLocation.coords);
-          setRegion({
-            latitude: newLocation.coords.latitude,
-            longitude: newLocation.coords.longitude,
-            latitudeDelta: 0.001,
-            longitudeDelta: 0.001,
-          });
-        }
-      );
-
-      // Sample notifications data
-      setNotifications([
-        { id: 1, text: 'Hazardous area ahead on Highway 1', location: 'Near Central Park', category: 'Traffic' },
-        { id: 2, text: 'Slow down! Traffic congestion near Elm Street', location: 'Downtown Area', category: 'Traffic' },
-        { id: 3, text: 'Accident reported near Park Avenue', location: 'Central District', category: 'Safety' },
-        { id: 4, text: 'Roadblock near Main Street', location: 'Suburb Area', category: 'Traffic' },
-        { id: 5, text: 'Construction work near the bridge', location: 'Near Riverbend', category: 'Work Zone' },
-        { id: 6, text: 'Heavy traffic reported near Market Square', location: 'Downtown Area', category: 'Traffic' },
-      ]);
-    })();
+    // Sample notifications data
+    setNotifications([
+      { id: 1, text: 'Hazardous area ahead on Highway 1', location: 'Near Central Park', category: 'Traffic' },
+      { id: 2, text: 'Slow down! Traffic congestion near Elm Street', location: 'Downtown Area', category: 'Traffic' },
+      { id: 3, text: 'Accident reported near Park Avenue', location: 'Central District', category: 'Safety' },
+      { id: 4, text: 'Roadblock near Main Street', location: 'Suburb Area', category: 'Traffic' },
+      { id: 5, text: 'Construction work near the bridge', location: 'Near Riverbend', category: 'Work Zone' },
+      { id: 6, text: 'Heavy traffic reported near Market Square', location: 'Downtown Area', category: 'Traffic' },
+    ]);
   }, []);
 
   const toggleModal = () => {
@@ -106,27 +67,6 @@ const HomeScreen = ({ navigation }) => {
           </TouchableOpacity>
         </View>
       </Modal>
-
-      {region ? (
-        <View style={styles.mapContainer}>
-          <MapView
-            style={styles.map}
-            region={region}
-          >
-            <Marker
-              coordinate={{
-                latitude: location.latitude,
-                longitude: location.longitude,
-              }}
-              title="You are here"
-            >
-              <Image source={require('../assets/person.png')} style={styles.personIcon} />
-            </Marker>
-          </MapView>
-        </View>
-      ) : (
-        <Text style={styles.loadingText}>Loading...</Text>
-      )}
 
       <ScrollView style={styles.notificationContainer}>
         <Text style={styles.notificationTitle}>Hazard Alerts</Text>
@@ -192,28 +132,6 @@ const styles = StyleSheet.create({
   modalText: {
     fontSize: 18,
     padding: 10,
-  },
-  mapContainer: {
-    marginLeft: 25,
-    width:350,
-    borderRadius: 30,
-    overflow: 'hidden',
-    marginTop: 20,
-    borderColor: '#545151',
-    borderWidth: 1,
-  },
-  map: {
-    height: 300,
-  },
-  loadingText: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    fontSize: 20,
-  },
-  personIcon: {
-    width: 40,
-    height: 40,
   },
   notificationContainer: {
     backgroundColor: '#fff',
