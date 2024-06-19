@@ -3,6 +3,8 @@
     "name": "Landguard",
     "slug": "landguard-hflmfai-ld2ap-ikm-nja",
     "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
     "extra": {
       "eas": {
         "projectId": "7019d4fc-bd25-4a4c-839a-d67d5285f7b2"
