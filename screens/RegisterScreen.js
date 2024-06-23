@@ -1,149 +1,121 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, Image } from 'react-native';
-import { Formik } from 'formik';
-import * as yup from 'yup';
+import { View, TextInput, TouchableOpacity, Text, StyleSheet, Alert } from 'react-native';
 import { auth } from '../firebaseConfig';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { useFonts } from 'expo-font';
-
-const registerValidationSchema = yup.object().shape({
-  email: yup.string().email('Invalid email').required('Email is required'),
-  password: yup.string().min(6, 'Password must be at least 6 characters').required('Password is required'),
-  confirmPassword: yup.string()
-    .oneOf([yup.ref('password'), null], 'Passwords must match')
-    .required('Confirm Password is required'),
-});
+import { authenticateAsync, hasHardwareAsync } from 'expo-local-authentication';
 
 const RegisterScreen = ({ navigation }) => {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [fontsLoaded] = useFonts({
-    Poppins: require('../assets/fonts/Poppins-Regular.ttf'),
-  });
+  const [useFingerprint, setUseFingerprint] = useState(false);
+  const [registrationSuccess, setRegistrationSuccess] = useState(false);
 
-  if (!fontsLoaded) {
-    return null; // Optionally display a loading screen or spinner while fonts load
-  }
+  const checkFingerprintAvailability = async () => {
+    const isAvailable = await hasHardwareAsync();
+    return isAvailable;
+  };
 
-  const handleRegister = (values) => {
-    setLoading(true);
-    createUserWithEmailAndPassword(auth, values.email, values.password)
-      .then(() => {
-        setLoading(false);
-        Alert.alert('Registration successful!');
-        navigation.navigate('LANDGUARD'); // Navigate to LoginScreen after successful registration
-      })
-      .catch((error) => {
-        setLoading(false);
-        Alert.alert('Registration error', error.message);
+  const registerUser = async () => {
+    try {
+      setLoading(true);
+      await createUserWithEmailAndPassword(auth, email, password);
+      setLoading(false);
+      setRegistrationSuccess(true);
+
+      // Navigate to passcode registration screen with email as parameter
+      navigation.navigate('PasscodeInput', { email: email });
+    } catch (error) {
+      setLoading(false);
+      console.error('Error registering user:', error);
+      Alert.alert('Registration Error', error.message);
+    }
+  };
+
+  const registerFingerprint = async () => {
+    try {
+      const result = await authenticateAsync({
+        promptMessage: 'Authenticate to register fingerprint',
       });
-  };
 
-  const handleGoogleSignIn = async () => {
-    setLoading(true);
-    try {
-      await signInWithPopup(auth, googleProvider);
-      setLoading(false);
-      navigation.navigate('Home');
+      if (result.success) {
+        setUseFingerprint(true);
+      } else {
+        Alert.alert('Fingerprint Registration Failed', 'Failed to register fingerprint.');
+      }
     } catch (error) {
-      setLoading(false);
-      Alert.alert('Google Sign-In Error', error.message);
+      console.error('Error registering fingerprint:', error);
+      Alert.alert('Error', 'Failed to register fingerprint.');
     }
   };
 
-  const handleFacebookSignIn = async () => {
-    setLoading(true);
+  const navigateToPasscodeRegistration = () => {
+    navigation.navigate('Passcode', { email: email });
+  };
+
+  const handleRegisterButtonPress = async () => {
     try {
-      await signInWithPopup(auth, facebookProvider);
-      setLoading(false);
-      navigation.navigate('Home');
+      const fingerprintAvailable = await checkFingerprintAvailability();
+
+      if (useFingerprint && fingerprintAvailable) {
+        await registerFingerprint();
+      } else {
+        await registerUser();
+      }
     } catch (error) {
-      setLoading(false);
-      Alert.alert('Facebook Sign-In Error', error.message);
+      console.error('Error checking fingerprint availability:', error);
+      Alert.alert('Error', 'Failed to check fingerprint availability');
     }
   };
+
+  if (registrationSuccess) {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.registrationSuccessText}>Registration successful!</Text>
+
+        <View style={styles.toggleContainer}>
+          <TouchableOpacity
+            style={[styles.toggleButton, useFingerprint ? styles.activeButton : null]}
+            onPress={registerFingerprint}
+          >
+            <Text style={styles.buttonText}>Register with Fingerprint</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.toggleButton, !useFingerprint ? styles.activeButton : null]}
+            onPress={navigateToPasscodeRegistration}
+          >
+            <Text style={styles.buttonText}>Register with Passcode</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
-      
-      <View style={styles.form}>
-        <Formik
-          validationSchema={registerValidationSchema}
-          initialValues={{ email: '', password: '', confirmPassword: '' }}
-          onSubmit={handleRegister}
-        >
-          {({ handleChange, handleBlur, handleSubmit, values, errors, touched }) => (
-            <>
-              <View style={styles.header}>
-                <Text style={[styles.title, { fontFamily: 'Poppins' }]}>Registration</Text>
-              </View>
-              <Text style={[styles.label, { fontFamily: 'Poppins' }]}>Email</Text>
-              <TextInput
-                style={styles.input}
-                placeholder=""
-                onChangeText={handleChange('email')}
-                onBlur={handleBlur('email')}
-                value={values.email}
-                placeholderTextColor="#7C7A7A"
-              />
-              {touched.email && errors.email && <Text style={styles.errorText}>{errors.email}</Text>}
+      <TextInput
+        style={styles.input}
+        placeholder="Email"
+        onChangeText={(text) => setEmail(text)}
+        value={email}
+        keyboardType="email-address"
+        autoCapitalize="none"
+      />
+      <TextInput
+        style={styles.input}
+        placeholder="Password"
+        onChangeText={(text) => setPassword(text)}
+        value={password}
+        secureTextEntry
+      />
 
-              <Text style={[styles.label, { fontFamily: 'Poppins' }]}>Password</Text>
-              <TextInput
-                style={styles.input}
-                placeholder=""
-                onChangeText={handleChange('password')}
-                onBlur={handleBlur('password')}
-                value={values.password}
-                secureTextEntry
-                placeholderTextColor="#7C7A7A"
-              />
-              {touched.password && errors.password && <Text style={styles.errorText}>{errors.password}</Text>}
+      <TouchableOpacity style={styles.button} onPress={handleRegisterButtonPress} disabled={loading}>
+        <Text style={styles.buttonText}>Register</Text>
+      </TouchableOpacity>
 
-              <Text style={[styles.label, { fontFamily: 'Poppins' }]}>Confirm Password</Text>
-              <TextInput
-                style={styles.input}
-                placeholder=""
-                onChangeText={handleChange('confirmPassword')}
-                onBlur={handleBlur('confirmPassword')}
-                value={values.confirmPassword}
-                secureTextEntry
-                placeholderTextColor="#7C7A7A"
-              />
-              {touched.confirmPassword && errors.confirmPassword && <Text style={styles.errorText}>{errors.confirmPassword}</Text>}
-
-              <TouchableOpacity
-                style={[styles.button, { backgroundColor: '#E0C55B' }]}
-                onPress={handleSubmit}
-                disabled={loading}
-              >
-                <Text style={styles.buttonText}>Register</Text>
-              </TouchableOpacity>
-            </>
-          )}
-        </Formik>
-
-        <View style={styles.separatorContainer}>
-          <View style={styles.separator} />
-          <Text style={[styles.orText, { fontFamily: 'Poppins' }]}>Or Sign up with</Text>
-          <View style={styles.separator} />
-        </View>
-
-        <View style={styles.socialButtons}>
-          <TouchableOpacity onPress={handleGoogleSignIn} disabled={loading}>
-            <Image source={require('../assets/google.png')} style={styles.googleLogo} />
-          </TouchableOpacity>
-
-          <Text style={[styles.orText, { fontFamily: 'Poppins' }]}>Or</Text>
-
-          <TouchableOpacity onPress={handleFacebookSignIn} disabled={loading}>
-            <Image source={require('../assets/facebook.png')} style={styles.facebookLogo} />
-          </TouchableOpacity>
-        </View>
-
-        <TouchableOpacity onPress={() => navigation.navigate('LANDGUARD')}>
-          <Text style={styles.registerText}>Already have an account? Login</Text>
-        </TouchableOpacity>
-      </View>
+      <TouchableOpacity onPress={() => navigation.navigate('Login')}>
+        <Text style={styles.loginText}>Already have an account? Login</Text>
+      </TouchableOpacity>
     </View>
   );
 };
@@ -151,109 +123,63 @@ const RegisterScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingHorizontal: 16,
-    backgroundColor: '#545151',
-  },
-  header: {
-    justifyContent: 'flex-start',
-    alignItems: 'center',
-    marginBottom: 0,
-  },
-  label: {
-    fontSize: 15,
-    padding: 5,
-    marginBottom: 10,
-    color: 'white',
-    fontFamily: 'Poppins',
-  },
-  title: {
-    color: 'white',
-    padding: 10,
-    marginTop: 0,
-    fontSize: 40,
-    fontFamily: 'Poppins',
-  },
-  form: {
-    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    paddingHorizontal: 20,
+    backgroundColor: '#545151', // Background color for consistency
   },
   input: {
-    width: 300,
-    height: 45,
-    borderColor: '#7C7A7A',
-    borderWidth: 2,
-    marginBottom: 10,
-    paddingLeft: 8,
-    borderRadius: 20,
-    color: 'white',
-  },
-  errorText: {
-    marginBottom: 10,
-    height: 20,
-    fontSize: 12,
-    color: 'red',
-  },
-  registerText: {
-    marginTop: 20,
-    color: 'white',
-    fontSize: 16,
-    textAlign: 'center',
-    fontFamily: 'Poppins',
+    width: '100%',
+    height: 50,
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    marginBottom: 20,
+    backgroundColor: '#FFFFFF', // Input background color
   },
   button: {
-    width: 300,
-    height: 53,
+    width: '100%',
+    height: 50,
+    backgroundColor: '#E0C55B', // Same color as other screens
     justifyContent: 'center',
     alignItems: 'center',
-    marginVertical: 10,
-    borderRadius: 20,
-    backgroundColor: '#E0C55B',
-    shadowColor: '#000', 
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.5,
-    shadowRadius: 4,
-    elevation: 5,
+    borderRadius: 8,
+    marginBottom: 10,
+  },
+  toggleContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    width: '100%',
+    marginBottom: 20,
+  },
+  toggleButton: {
+    flex: 1,
+    height: 50,
+    backgroundColor: '#4CAF50', // Same color as other screens
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 8,
+    marginHorizontal: 10,
+  },
+  activeButton: {
+    backgroundColor: '#007BFF', // Same color as other active buttons
   },
   buttonText: {
-    color: 'black',
-    fontSize: 20,
+    fontSize: 18,
+    color: '#FFF',
+  },
+  registrationSuccessText: {
+    fontSize: 24,
     fontWeight: 'bold',
-    fontFamily: 'Poppins',
+    marginBottom: 20,
+    color: '#FFF', // Text color for success message
   },
-  separator: {
-    flex: 1,
-    height: 1,
-    backgroundColor: '#fff',
-    marginHorizontal: 10,
-  },
-  orText: {
-    marginHorizontal: 10,
-    color: '#fff',
+  loginText: {
+    marginTop: 20,
+    color: '#FFF',
     fontSize: 16,
-    fontFamily: 'Poppins',
-  },
-  separatorContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: 20,
-    justifyContent: 'center',
-  },
-  socialButtons: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginVertical: 20,
-  },
-  googleLogo: {
-    width: 50,
-    height: 50,
-    resizeMode: 'contain',
-  },
-  facebookLogo: {
-    width: 50,
-    height: 50,
-    resizeMode: 'contain',
+    textAlign: 'center',
   },
 });
 

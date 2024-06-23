@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Image, ImageBackground, ActivityIndicator } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, Image, ImageBackground, Animated } from 'react-native';
 import { useFonts } from 'expo-font';
 import { BlurView } from 'expo-blur';
 
@@ -8,8 +8,47 @@ const LandingScreen = ({ navigation }) => {
     Poppins: require('../assets/fonts/Poppins-Regular.ttf'), // Replace with your font file path
   });
 
-  if (!fontsLoaded) {
-    return <ActivityIndicator size="large" color="#E0C55B" style={styles.loadingIndicator} />; // Show a loading spinner while fonts are loading
+  const [loading, setLoading] = useState(true); // State to manage loading animation
+  const spinValue = new Animated.Value(0); // Animation value for rotation
+
+  useEffect(() => {
+    // Simulate font loading delay, remove this in production
+    const timeout = setTimeout(() => {
+      setLoading(false);
+    }, 3000); // Adjust the timeout duration as needed
+
+    return () => clearTimeout(timeout);
+  }, []);
+
+  useEffect(() => {
+    // Rotate animation for tire image
+    Animated.loop(
+      Animated.timing(spinValue, {
+        toValue: 1,
+        duration: 3000,
+        useNativeDriver: true,
+      })
+    ).start();
+  }, []);
+
+  const spin = spinValue.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '360deg'],
+  });
+
+  if (!fontsLoaded || loading) {
+    return (
+      <ImageBackground source={require('../assets/background.jpg')} style={styles.background}>
+        <BlurView intensity={50} style={styles.blurContainer}>
+          <View style={styles.container}>
+            <Animated.Image
+              source={require('../assets/tire.png')} // Replace with your tire image source
+              style={[styles.loadingIcon, { transform: [{ rotate: spin }] }]}
+            />
+          </View>
+        </BlurView>
+      </ImageBackground>
+    );
   }
 
   return (
@@ -21,7 +60,7 @@ const LandingScreen = ({ navigation }) => {
           </View>
           <TouchableOpacity
             style={styles.signInButton}
-            onPress={() => navigation.navigate('LANDGUARD')}
+            onPress={() => navigation.navigate('Login')}
           >
             <Text style={styles.buttonText}>Sign-in</Text>
           </TouchableOpacity>
@@ -97,10 +136,10 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontFamily: 'Poppins',
   },
-  loadingIndicator: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+  loadingIcon: {
+    width: 80, // Adjust the width and height as needed
+    height: 80,
+    marginBottom: 20,
   },
 });
 

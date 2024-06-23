@@ -1,9 +1,11 @@
+// LoginScreen.js
+
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, Image } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { Formik } from 'formik';
 import * as yup from 'yup';
-import { auth, googleProvider, facebookProvider } from '../firebaseConfig';
-import { signInWithEmailAndPassword, signInWithPopup } from 'firebase/auth';
+import { auth } from '../firebaseConfig';
+import { signInWithEmailAndPassword } from 'firebase/auth';
 import { useFonts } from 'expo-font';
 
 const loginValidationSchema = yup.object().shape({
@@ -14,48 +16,24 @@ const loginValidationSchema = yup.object().shape({
 const LoginScreen = ({ navigation }) => {
   const [loading, setLoading] = useState(false);
   const [fontsLoaded] = useFonts({
-    Poppins: require('../assets/fonts/Poppins-Regular.ttf'), // Replace with your font file path
+    Poppins: require('../assets/fonts/Poppins-Regular.ttf'),
   });
-
-  if (!fontsLoaded) {
-    return null; // Load font here
-  }
 
   const handleLogin = async (values) => {
     setLoading(true);
     try {
       await signInWithEmailAndPassword(auth, values.email, values.password);
       setLoading(false);
-      navigation.navigate('Home');
+      navigation.navigate('VerificationOptions'); // Navigate to fingerprint verification screen
     } catch (error) {
       setLoading(false);
       Alert.alert('Login Error', error.message);
     }
   };
 
-  const handleGoogleSignIn = async () => {
-    setLoading(true);
-    try {
-      await signInWithPopup(auth, googleProvider);
-      setLoading(false);
-      navigation.navigate('Home');
-    } catch (error) {
-      setLoading(false);
-      Alert.alert('Google Sign-In Error', error.message);
-    }
-  };
-
-  const handleFacebookSignIn = async () => {
-    setLoading(true);
-    try {
-      await signInWithPopup(auth, facebookProvider);
-      setLoading(false);
-      navigation.navigate('Home');
-    } catch (error) {
-      setLoading(false);
-      Alert.alert('Facebook Sign-In Error', error.message);
-    }
-  };
+  if (!fontsLoaded) {
+    return null; // Load font here or render a loading indicator
+  }
 
   return (
     <View style={styles.container}>
@@ -95,6 +73,7 @@ const LoginScreen = ({ navigation }) => {
               />
               {touched.password && errors.password && <Text style={styles.errorText}>{errors.password}</Text>}
 
+              {/* Button to log in with email/password */}
               <TouchableOpacity
                 style={[styles.button, { backgroundColor: '#E0C55B' }]}
                 onPress={handleSubmit}
@@ -106,22 +85,7 @@ const LoginScreen = ({ navigation }) => {
           )}
         </Formik>
 
-        <View style={styles.separatorContainer}>
-          <View style={styles.separator} />
-          <Text style={[styles.orText, { fontFamily: 'Poppins' }]}>Or Sign in with</Text>
-          <View style={styles.separator} />
-        </View>
-
-        <View style={styles.socialButtons}>
-          <TouchableOpacity onPress={handleGoogleSignIn} disabled={loading} style={styles.socialButton}>
-            <Image source={require('../assets/google.png')} style={styles.googleLogo} />
-          </TouchableOpacity>
-          <Text style={styles.orText}>Or</Text>
-          <TouchableOpacity onPress={handleFacebookSignIn} disabled={loading} style={styles.socialButton}>
-            <Image source={require('../assets/facebook.png')} style={styles.facebookLogo} />
-          </TouchableOpacity>
-        </View>
-
+        {/* Navigation link to Register screen */}
         <TouchableOpacity onPress={() => navigation.navigate('Register')}>
           <Text style={[styles.registerText, { fontFamily: 'Poppins' }]}>Don't have an account? Register</Text>
         </TouchableOpacity>
@@ -135,8 +99,8 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 16,
     backgroundColor: '#545151',
-    justifyContent: 'center', // Center vertically
-    alignItems: 'center', // Center horizontally
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   header: {
     justifyContent: 'flex-start',
@@ -160,7 +124,7 @@ const styles = StyleSheet.create({
     fontSize: 15,
     padding: 5,
     color: 'white',
-    alignSelf: 'flex-start', // Align text to the start of the container
+    alignSelf: 'flex-start',
   },
   title: {
     color: 'white',
@@ -169,7 +133,7 @@ const styles = StyleSheet.create({
     fontSize: 40,
   },
   form: {
-    width: '100%', // Ensure the form takes up the full width
+    width: '100%',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -187,28 +151,13 @@ const styles = StyleSheet.create({
     height: 20,
     fontSize: 12,
     color: 'red',
-    alignSelf: 'center', // Center the error text horizontally
+    alignSelf: 'center',
   },
   registerText: {
     marginTop: 20,
     color: 'white',
     fontSize: 16,
     textAlign: 'center',
-  },
-  separatorContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: 20,
-  },
-  separator: {
-    flex: 1,
-    height: 1,
-    backgroundColor: '#fff',
-  },
-  orText: {
-    marginHorizontal: 10,
-    color: '#fff',
-    fontSize: 16,
   },
   button: {
     width: 300,
@@ -217,32 +166,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginVertical: 10,
     borderRadius: 20,
-    backgroundColor: '#E0C55B', // Assuming this is the color you want for the button background
-    shadowColor: '#000', // Color of the shadow
-    shadowOffset: { width: 0, height: 4 }, // Offset for the shadow
-    shadowOpacity: 0.5, // Opacity of the shadow
-    shadowRadius: 4, // Blur radius of the shadow
-    elevation: 5, // Elevation for Android to support shadow on some devices
-  },
-  socialButtons: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 20,
-    padding: 20,
-  },
-  socialButton: {
-    marginHorizontal: 10,
-  },
-  googleLogo: {
-    width: 50,
-    height: 50,
-    resizeMode: 'contain',
-  },
-  facebookLogo: {
-    width: 50,
-    height: 50,
-    resizeMode: 'contain',
+    backgroundColor: '#E0C55B',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.5,
+    shadowRadius: 4,
+    elevation: 5,
   },
   buttonText: {
     color: 'black',

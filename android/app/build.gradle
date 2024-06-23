@@ -166,6 +166,16 @@ dependencies {
     } else {
         implementation jscFlavor
     }
+    
+    // Add these lines to include react-native-randombytes
+    implementation project(':react-native-randombytes')
+
+    // If you encounter issues with duplicate classes, you might need to exclude some libraries
+    implementation ('com.github.joshjdevl.libsodiumjni:libsodium-jni-aar:1.0.13') {
+        exclude group: 'com.facebook.yoga'
+        exclude group: 'com.facebook.fresco'
+        exclude group: 'com.facebook.soloader'
+    }
 }
 
 apply from: new File(["node", "--print", "require.resolve('@react-native-community/cli-platform-android/package.json', { paths: [require.resolve('react-native/package.json')] })"].execute(null, rootDir).text.trim(), "../native_modules.gradle");

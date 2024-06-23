@@ -10,6 +10,21 @@
         "projectId": "7019d4fc-bd25-4a4c-839a-d67d5285f7b2"
       }
     },
-    "owner": "melvinsagnoy"
+    "owner": "melvinsagnoy",
+    "android": {
+      "permissions": [
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION"
+      ],
+      "package": "com.melvinsagnoy.landguard"
+    },
+    "ios": {
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "This app needs access to your location to show your position on the map."
+      }
+    },
+    "plugins": [
+      "expo-font"
+    ]
   }
 }

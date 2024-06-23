@@ -1,90 +1,187 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, Image, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
-import Icon from 'react-native-vector-icons/FontAwesome';
-import Modal from 'react-native-modal';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  ScrollView,
+  Image,
+  Modal,
+  Animated,
+} from 'react-native';
+import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
+import NavBar from './NavBar'; // Import NavBar component
+import { auth } from '../firebaseConfig'; // Adjust the import path to one level up
+import CreatePostModal from './CreatePostModal'; // Import CreatePostModal component
+import { useFonts } from 'expo-font';
 
 const HomeScreen = ({ navigation }) => {
-  const [isModalVisible, setModalVisible] = useState(false);
-  const [notifications, setNotifications] = useState([]); // State for notifications
+  const [isCreatePostModalVisible, setCreatePostModalVisible] = useState(false);
+  const [isMenuModalVisible, setMenuModalVisible] = useState(false);
+  const [notifications, setNotifications] = useState([]); // Assuming notifications are static
+  const [posts, setPosts] = useState([]); // Array to manage posts with new fields
+  const [iconScales, setIconScales] = useState({
+    home: new Animated.Value(1),
+    search: new Animated.Value(1),
+    add: new Animated.Value(1),
+    bell: new Animated.Value(1),
+    user: new Animated.Value(1),
+  });
+  const [activeNav, setActiveNav] = useState('home'); // State to track active navigation button
+  const [user, setUser] = useState(null); // State to track the logged-in user
+  const [fontsLoaded] = useFonts({
+    Poppins: require('../assets/fonts/Poppins-Regular.ttf'),
+  });
 
   useEffect(() => {
-    // Sample notifications data
-    setNotifications([
-      { id: 1, text: 'Hazardous area ahead on Highway 1', location: 'Near Central Park', category: 'Traffic' },
-      { id: 2, text: 'Slow down! Traffic congestion near Elm Street', location: 'Downtown Area', category: 'Traffic' },
-      { id: 3, text: 'Accident reported near Park Avenue', location: 'Central District', category: 'Safety' },
-      { id: 4, text: 'Roadblock near Main Street', location: 'Suburb Area', category: 'Traffic' },
-      { id: 5, text: 'Construction work near the bridge', location: 'Near Riverbend', category: 'Work Zone' },
-      { id: 6, text: 'Heavy traffic reported near Market Square', location: 'Downtown Area', category: 'Traffic' },
-    ]);
+    // Listen for authentication state changes
+    const unsubscribe = auth.onAuthStateChanged((user) => {
+      if (user) {
+        setUser(user);
+      } else {
+        navigation.navigate('LANDGUARD'); // Navigate to login screen if user is not logged in
+      }
+    });
+
+    // Clean up the subscription
+    return unsubscribe;
   }, []);
 
-  const toggleModal = () => {
-    setModalVisible(!isModalVisible);
+  const toggleCreatePostModal = () => {
+    setCreatePostModalVisible(!isCreatePostModalVisible);
+  };
+
+  const toggleMenuModal = () => {
+    setMenuModalVisible((prev) => !prev);
   };
 
   const handleSettings = () => {
-    setModalVisible(false);
+    setMenuModalVisible(false);
     navigation.navigate('Settings');
   };
 
   const handleLogout = () => {
-    setModalVisible(false);
-    navigation.navigate('Landing');
+    auth.signOut().then(() => {
+      setMenuModalVisible(false);
+      navigation.navigate('LADNGUARD'); // Navigate to login screen after logging out
+    }).catch((error) => {
+      console.error('Error logging out: ', error);
+    });
   };
 
-  const renderNotificationsByCategory = (category) => {
-    return notifications
-      .filter((notification) => notification.category === category)
-      .map((notification) => (
-        <View key={notification.id} style={styles.notificationItem}>
-          <Text style={styles.notificationText}>
-            {notification.text} - {notification.location}
-          </Text>
-        </View>
-      ));
+  const addNewPost = (newPost) => {
+    setPosts((prevPosts) => [...prevPosts, newPost]); // Include timestamp for new posts
   };
+
+  const renderNewsFeed = () => {
+    return posts.map((post, index) => (
+      <View key={index} style={styles.feedItem}>
+        <View style={styles.feedContent}>
+          <Text style={styles.feedTitle}>{post.title}</Text>
+          <Text style={styles.feedDescription}>{post.description}</Text>
+          <Text style={styles.feedAddress}>{post.address}</Text>
+          <Text style={styles.feedTimestamp}>{post.timestamp}</Text> {/* Display timestamp */}
+          <TouchableOpacity style={styles.categoryButton}>
+            <Text style={styles.categoryText}>{post.category}</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    ));
+  };
+
+  const animateIcon = (iconName) => {
+    Animated.sequence([
+      Animated.timing(iconScales[iconName], {
+        toValue: 0.8,
+        duration: 100,
+        useNativeDriver: true,
+      }),
+      Animated.timing(iconScales[iconName], {
+        toValue: 1.2,
+        duration: 100,
+        useNativeDriver: true,
+      }),
+      Animated.timing(iconScales[iconName], {
+        toValue: 1,
+        duration: 100,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  };
+
+  const setActiveScreen = (screen, navButton) => {
+    setActiveNav(navButton); // Update active navigation state
+    navigation.navigate(screen); // Navigate to the screen
+  };
+
+  const handleCreatePost = () => {
+    setCreatePostModalVisible(true); // Open modal to create a post
+  };
+
+  if (!fontsLoaded) {
+    return null; // Load font here
+  }
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <View style={styles.logoContainer}>
-          <Image source={require('../assets/icon.png')} style={styles.logo} />
-        </View>
-        <Text style={styles.headerTitle}>LANDGUARD</Text>
-        <TouchableOpacity style={styles.menuIconContainer} onPress={toggleModal}>
-          <Icon name="ellipsis-v" size={30} color="#fff" />
-        </TouchableOpacity>
-      </View>
+      <CreatePostModal
+        isVisible={isCreatePostModalVisible}
+        onClose={toggleCreatePostModal}
+        onSubmit={addNewPost} // Pass function to add new posts
+      />
 
-      <Modal isVisible={isModalVisible} onBackdropPress={toggleModal}>
-        <View style={styles.modalContent}>
-          <TouchableOpacity onPress={handleSettings}>
-            <Text style={styles.modalText}>Settings</Text>
-          </TouchableOpacity>
-          <TouchableOpacity onPress={handleLogout}>
-            <Text style={styles.modalText}>Logout</Text>
-          </TouchableOpacity>
+      <Modal
+        visible={isMenuModalVisible} // Use 'visible' instead of 'isVisible'
+        transparent={true} // Optional: makes the background semi-transparent
+        animationType="slide" // Optional: adds slide animation
+        onRequestClose={toggleMenuModal}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <TouchableOpacity onPress={handleSettings}>
+              <Text style={styles.modalText1}>Settings</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={handleLogout}>
+              <Text style={styles.modalText2}>Logout</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </Modal>
 
-      <ScrollView style={styles.notificationContainer}>
-        <Text style={styles.notificationTitle}>Hazard Alerts</Text>
-        <Text style={styles.categoryTitle}>Traffic:</Text>
-        {renderNotificationsByCategory('Traffic')}
-        <Text style={styles.categoryTitle}>Safety:</Text>
-        {renderNotificationsByCategory('Safety')}
-        <Text style={styles.categoryTitle}>Work Zone:</Text>
-        {renderNotificationsByCategory('Work Zone')}
+      <View style={styles.createPostButtonContainer}>
+        <TouchableOpacity style={styles.createPostButton} onPress={handleCreatePost}>
+          <Text style={styles.createPostText}>CREATE POST</Text>
+        </TouchableOpacity>
+      </View>
+
+      <View style={styles.headerHead}>
+        <Image source={require('../assets/icon.png')} style={styles.headerIcon} />
+        <Text style={[styles.headerTitle]}>Landguard</Text>
+      <TouchableOpacity style={styles.menuIconContainer} onPress={toggleMenuModal}>
+        <MaterialIcons name="menu" size={30} color="#000" />
+      </TouchableOpacity>
+
+      {user && (
+        <TouchableOpacity style={styles.profileIconContainer} onPress={() => navigation.navigate('Profile')}>
+          <Image
+            source={{ uri: user.photoURL || 'https://via.placeholder.com/150' }} // Default image if no photoURL
+            style={styles.profileIcon}
+          />
+        </TouchableOpacity>
+      )}
+      </View>
+
+      <ScrollView style={styles.newsFeedContainer}>
+        {renderNewsFeed()}
       </ScrollView>
 
-      <View style={styles.navbar}>
-        <Icon name="home" size={30} color="#545151" onPress={() => navigation.navigate('Home')} />
-        <Icon name="search" size={30} color="#545151" onPress={() => navigation.navigate('Search')} />
-        <Icon name="plus-circle" size={30} color="#545151" onPress={() => navigation.navigate('Add')} />
-        <Icon name="bell" size={30} color="#545151" onPress={() => navigation.navigate('Notifications')} />
-        <Icon name="user" size={30} color="#545151" onPress={() => navigation.navigate('Profile')} />
-      </View>
+      <NavBar
+        navigation={navigation}
+        animateIcon={animateIcon}
+        activeNav={activeNav}
+        setActiveScreen={setActiveScreen}
+        iconScales={iconScales}
+      />
     </View>
   );
 };
@@ -93,86 +190,174 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#E0E0E0',
+    paddingTop: 15,
   },
-  header: {
-    marginTop: 15,
-    backgroundColor: '#545151',
-    padding: 20,
-    height: 90,
-    flexDirection: 'row',
+  createPostButtonContainer: {
+    marginTop: 20,
     alignItems: 'center',
-    justifyContent: 'space-between',
+  },
+  headerHead:{
+    position: 'absolute',
+    top: 0,
+    left:0,
+    right: 0,
+    padding: 20,
+    backgroundColor: '#fff',
+    height: 120,
+    zIndex: -1,
+    shadowColor: '#000', // Color of the shadow
+    shadowOffset: { width: 0, height: 4 }, // Offset for the shadow
+    shadowOpacity: 0.5, // Opacity of the shadow
+    shadowRadius: 4, // Blur radius of the shadow
+    elevation: 5,
+  },
+  headerIcon: {
+    width: 50,
+    height: 50,
+    position: 'absolute',
+    top: 55,
+    left: 15,
+    zIndex: 1,
+    borderRadius: 5,
+    borderWidth: 0.5,
+    borderColor: '#7C7A7A',
+    shadowColor: '#000', // Color of the shadow
+    shadowOffset: { width: 0, height: 4 }, // Offset for the shadow
+    shadowOpacity: 0.5, // Opacity of the shadow
+    shadowRadius: 4, // Blur radius of the shadow
   },
   headerTitle: {
-    marginLeft: -20,
-    marginTop: 25,
-    fontSize: 20,
-    color: '#E0C55B',
+    fontSize: 25,
+    color: '#000',
     fontWeight: 'bold',
-  },
-  logoContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  logo: {
-    marginTop: 35,
-    height: 50,
-    width: 50,
-    borderRadius: 10,
+    position: 'absolute',
+    top: 65,
+    left: 75,
   },
   menuIconContainer: {
-    marginTop: 20,
-    marginRight: 10,
+    position: 'absolute',
+    top: 60,
+    right: 20,
+  },
+  profileIconContainer: {
+    position: 'absolute',
+    top: 60,
+    right: 60,
+  },
+  profileIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+  },
+  modalOverlay: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.25)', // semi-transparent background
   },
   modalContent: {
-    backgroundColor: 'white',
-    padding: 20,
+    backgroundColor: 0,
+    padding: 50,
     borderRadius: 10,
+    width: '100%', // Width adjustment to fit within the overlay
+    textAlign: 'center',
+    justifyContent: 'center',
+    alignContent: 'center',
+    alignItems: 'center',
   },
-  modalText: {
+  modalText1: {
+    backgroundColor: '#E0C55B',
+    padding: 20,
+    width: 200,
+    borderRadius: 50,
     fontSize: 18,
-    padding: 10,
+    margin: 20,
+    color: '#000',
   },
-  notificationContainer: {
+  modalText2: {
+    backgroundColor: '#545151',
+    padding: 20,
+    width: 200,
+    borderRadius: 50,
+    fontSize: 18,
+    margin: 20,
+    color: '#fff',
+  },
+  newsFeedContainer: {
     backgroundColor: '#fff',
     borderWidth: 1,
     borderColor: '#545151',
     borderRadius: 10,
-    padding: 30,
-    marginTop: 20,
-    marginBottom: 90,
+    padding: 20,
+    marginTop: 160,
+    marginBottom: 120,
     marginHorizontal: 10,
-    height: 800,
+    paddingBottom: 100,
   },
-  notificationTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 10,
-  },
-  categoryTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginVertical: 5,
-  },
-  notificationItem: {
-    marginBottom: 10,
-  },
-  notificationText: {
-    fontSize: 16,
-  },
-  navbar: {
-    position: 'fixed', // Keep this fixed at the bottom
+  feedItem: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
-    alignItems: 'center',
-    height: 60,
-    backgroundColor: '#fff',
-    borderTopWidth: 1,
-    borderTopColor: '#ccc',
+    marginBottom: 20,
+  },
+  feedContent: {
+    flex: 1,
+  },
+  feedTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 5,
+    fontFamily: 'Poppins', // Apply Poppins font
+  },
+  feedDescription: {
+    fontSize: 14,
+    marginBottom: 5,
+    fontFamily: 'Poppins', // Apply Poppins font
+  },
+  feedAddress: {
+    fontSize: 12,
+    marginBottom: 5,
+    fontStyle: 'italic',
+    fontFamily: 'Poppins', // Apply Poppins font
+  },
+  feedTimestamp: {
+    fontSize: 12,
+    marginBottom: 5,
+    color: '#777',
+    fontFamily: 'Poppins', // Apply Poppins font
+  },
+  categoryButton: {
+    backgroundColor: '#007AFF',
+    paddingVertical: 5,
+    paddingHorizontal: 10,
+    borderRadius: 5,
+    alignSelf: 'flex-start',
+  },
+  categoryText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: 'bold',
+    fontFamily: 'Poppins', // Apply Poppins font
+  },
+  createPostButton: {
     position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
+    right: 7,
+    top: 100,
+    backgroundColor: '#E0C55B',
+    padding: 10,
+    paddingVertical: 13,
+    borderRadius: 30,
+    flexDirection: 'row',
+    width: '35%',
+    textAlign: 'center',
+    shadowColor: '#000', // Color of the shadow
+    shadowOffset: { width: 0, height: 4 }, // Offset for the shadow
+    shadowOpacity: 0.5, // Opacity of the shadow
+    shadowRadius: 4, // Blur radius of the shadow
+    elevation: 5, // Elevation for Android to support shadow on some devices
+  },
+  createPostText: {
+    color: '#000',
+    fontSize: 12,
+    fontWeight: 'bold',
   },
 });
 
