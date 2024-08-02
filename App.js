@@ -1,9 +1,22 @@
 // App.js
-import React from 'react';
-import AuthNavigator from './navigation/AuthNavigator'; // Import the AuthNavigator that contains all the screens including Home
+import React, { useState } from 'react';
+import { Provider as PaperProvider, DefaultTheme, DarkTheme } from 'react-native-paper';
+import AuthNavigator from './navigation/AuthNavigator';
 
-export default function App() {
+const App = () => {
+  const [isDarkTheme, setIsDarkTheme] = useState(false);
+
+  const toggleTheme = () => {
+    setIsDarkTheme((prevTheme) => !prevTheme);
+  };
+
+  const theme = isDarkTheme ? DarkTheme : DefaultTheme;
+
   return (
-    <AuthNavigator /> // Render the AuthNavigator to handle navigation between the Login, Register, and Home screens
+    <PaperProvider theme={theme}>
+      <AuthNavigator toggleTheme={toggleTheme} isDarkTheme={isDarkTheme} />
+    </PaperProvider>
   );
-}
+};
+
+export default App;

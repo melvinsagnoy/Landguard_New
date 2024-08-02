@@ -61,7 +61,7 @@ const ProfileScreen = ({ navigation }) => {
 
   const handleLogout = () => {
     auth.signOut().then(() => {
-      navigation.navigate('LANDGUARD');
+      navigation.navigate('Login');
     }).catch((error) => {
       console.error('Error logging out:', error);
     });

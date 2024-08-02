@@ -1,3 +1,4 @@
+// navigation/AuthNavigator.js
 import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
@@ -13,10 +14,11 @@ import FingerprintVerification from '../screens/FingerprintVerification';
 import PasscodeInputScreen from '../screens/PasscodeInputScreen';
 import VerificationOptionsScreen from '../screens/VerificationOptionsScreen';
 import PasscodeVerificationScreen from '../screens/PasscodeVerificationScreen';
+import GameScreen from '../screens/GameScreen'; // Import your GameScreen
 
 const Stack = createStackNavigator();
 
-const AuthNavigator = () => {
+const AuthNavigator = ({ toggleTheme, isDarkTheme }) => {
   return (
     <NavigationContainer>
       <Stack.Navigator>
@@ -37,29 +39,34 @@ const AuthNavigator = () => {
         />
         <Stack.Screen
           name="Home"
-          component={HomeScreen}
           options={{ headerShown: false }}
-        />
+        >
+          {(props) => <HomeScreen {...props} toggleTheme={toggleTheme} isDarkTheme={isDarkTheme} />}
+        </Stack.Screen>
         <Stack.Screen
           name="Search"
-          component={SearchScreen}
           options={{ headerShown: false }}
-        />
+        >
+          {(props) => <SearchScreen {...props} toggleTheme={toggleTheme} isDarkTheme={isDarkTheme} />}
+        </Stack.Screen>
         <Stack.Screen
           name="Add"
-          component={AddScreen}
           options={{ headerShown: false }}
-        />
+        >
+          {(props) => <AddScreen {...props} toggleTheme={toggleTheme} isDarkTheme={isDarkTheme} />}
+        </Stack.Screen>
         <Stack.Screen
           name="Notifications"
-          component={NotificationsScreen}
           options={{ headerShown: false }}
-        />
+        >
+          {(props) => <NotificationsScreen {...props} toggleTheme={toggleTheme} isDarkTheme={isDarkTheme} />}
+        </Stack.Screen>
         <Stack.Screen
           name="Profile"
-          component={ProfileScreen}
           options={{ headerShown: false }}
-        />
+        >
+          {(props) => <ProfileScreen {...props} toggleTheme={toggleTheme} isDarkTheme={isDarkTheme} />}
+        </Stack.Screen>
         <Stack.Screen
           name="Fingerprint"
           component={FingerprintVerification}
@@ -75,9 +82,14 @@ const AuthNavigator = () => {
           component={VerificationOptionsScreen}
           options={{ headerShown: false }}
         />
-      <Stack.Screen
+        <Stack.Screen
           name="PasscodeVerificationScreen"
           component={PasscodeVerificationScreen}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="GameScreen" // Add this line
+          component={GameScreen}
           options={{ headerShown: false }}
         />
       </Stack.Navigator>

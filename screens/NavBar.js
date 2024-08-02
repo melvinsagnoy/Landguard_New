@@ -45,14 +45,14 @@ const NavBar = ({ navigation }) => {
         style={styles.navItem}
         onPress={() => handlePress('Home', 'home')}>
         <Animated.View style={{ transform: [{ scale: iconScales.home }] }}>
-          <MaterialIcons name="home" size={20} />
+          <MaterialIcons name="home" size={30} color="#000" />
         </Animated.View>
       </TouchableOpacity>
       <TouchableOpacity
         style={styles.navItem}
         onPress={() => handlePress('Search', 'search')}>
         <Animated.View style={{ transform: [{ scale: iconScales.search }] }}>
-          <MaterialIcons name="search" size={20} />
+          <Image source={require('../assets/joystick.png')} style={styles.navIcon} />
         </Animated.View>
       </TouchableOpacity>
       <TouchableOpacity
@@ -66,14 +66,14 @@ const NavBar = ({ navigation }) => {
         style={styles.navItem}
         onPress={() => handlePress('Notifications', 'bell')}>
         <Animated.View style={{ transform: [{ scale: iconScales.bell }] }}>
-          <MaterialIcons name="notifications" size={20} />
+          <MaterialIcons name="notifications" size={30} color="#000" />
         </Animated.View>
       </TouchableOpacity>
       <TouchableOpacity
         style={styles.navItem}
         onPress={() => handlePress('Profile', 'user')}>
         <Animated.View style={{ transform: [{ scale: iconScales.user }] }}>
-          <MaterialIcons name="account-circle" size={20} />
+          <MaterialIcons name="account-circle" size={30} color="#000" />
         </Animated.View>
       </TouchableOpacity>
     </View>
@@ -87,7 +87,7 @@ const styles = StyleSheet.create({
     left: 20,
     right: 20,
     height: 70,
-    backgroundColor: '#ffffff',
+    backgroundColor: '#E0C55B',
     borderRadius: 25,
     borderColor: '#ccc',
     borderWidth: 1,
@@ -107,12 +107,13 @@ const styles = StyleSheet.create({
   },
   addButtonContainer: {
     position: 'absolute',
-    top: -30,
-    left: '52%',
-    transform: [{ translateX: -15 }],
+    right: 100,
+    top: -35,
+    left: '50%',
+    transform: [{ translateX: -10 }],
     width: 60,
     height: 60,
-    borderRadius: 30,
+    borderRadius: 35,
     backgroundColor: '#E0C55B',
     justifyContent: 'center',
     alignItems: 'center',
@@ -123,9 +124,13 @@ const styles = StyleSheet.create({
     elevation: 5,
     zIndex: 1,
   },
-  addButtonIcon: {
+  navIcon: {
     width: 30,
     height: 30,
+  },
+  addButtonIcon: {
+    width: 50,
+    height: 50,
   },
 });
 

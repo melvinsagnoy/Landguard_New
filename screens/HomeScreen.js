@@ -8,18 +8,22 @@ import {
   Image,
   Modal,
   Animated,
+  Switch,
 } from 'react-native';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
-import NavBar from './NavBar'; // Import NavBar component
-import { auth } from '../firebaseConfig'; // Adjust the import path to one level up
-import CreatePostModal from './CreatePostModal'; // Import CreatePostModal component
+import NavBar from './NavBar';
+import { auth } from '../firebaseConfig';
+import CreatePostModal from './CreatePostModal';
 import { useFonts } from 'expo-font';
+import { useTheme } from 'react-native-paper';
 
-const HomeScreen = ({ navigation }) => {
+const HomeScreen = ({ navigation, toggleTheme, isDarkTheme }) => {
+  const { colors } = useTheme();
   const [isCreatePostModalVisible, setCreatePostModalVisible] = useState(false);
   const [isMenuModalVisible, setMenuModalVisible] = useState(false);
-  const [notifications, setNotifications] = useState([]); // Assuming notifications are static
-  const [posts, setPosts] = useState([]); // Array to manage posts with new fields
+  const [isSettingsModalVisible, setSettingsModalVisible] = useState(false);
+  const [notifications, setNotifications] = useState([]);
+  const [posts, setPosts] = useState([]);
   const [iconScales, setIconScales] = useState({
     home: new Animated.Value(1),
     search: new Animated.Value(1),
@@ -27,23 +31,21 @@ const HomeScreen = ({ navigation }) => {
     bell: new Animated.Value(1),
     user: new Animated.Value(1),
   });
-  const [activeNav, setActiveNav] = useState('home'); // State to track active navigation button
-  const [user, setUser] = useState(null); // State to track the logged-in user
+  const [activeNav, setActiveNav] = useState('home');
+  const [user, setUser] = useState(null);
   const [fontsLoaded] = useFonts({
     Poppins: require('../assets/fonts/Poppins-Regular.ttf'),
   });
 
   useEffect(() => {
-    // Listen for authentication state changes
     const unsubscribe = auth.onAuthStateChanged((user) => {
       if (user) {
         setUser(user);
       } else {
-        navigation.navigate('LANDGUARD'); // Navigate to login screen if user is not logged in
+        navigation.navigate('Login');
       }
     });
 
-    // Clean up the subscription
     return unsubscribe;
   }, []);
 
@@ -57,30 +59,30 @@ const HomeScreen = ({ navigation }) => {
 
   const handleSettings = () => {
     setMenuModalVisible(false);
-    navigation.navigate('Settings');
+    setSettingsModalVisible(true);
   };
 
   const handleLogout = () => {
     auth.signOut().then(() => {
       setMenuModalVisible(false);
-      navigation.navigate('LADNGUARD'); // Navigate to login screen after logging out
+      navigation.navigate('Login');
     }).catch((error) => {
       console.error('Error logging out: ', error);
     });
   };
 
   const addNewPost = (newPost) => {
-    setPosts((prevPosts) => [...prevPosts, newPost]); // Include timestamp for new posts
+    setPosts((prevPosts) => [...prevPosts, newPost]);
   };
 
   const renderNewsFeed = () => {
     return posts.map((post, index) => (
       <View key={index} style={styles.feedItem}>
         <View style={styles.feedContent}>
-          <Text style={styles.feedTitle}>{post.title}</Text>
-          <Text style={styles.feedDescription}>{post.description}</Text>
-          <Text style={styles.feedAddress}>{post.address}</Text>
-          <Text style={styles.feedTimestamp}>{post.timestamp}</Text> {/* Display timestamp */}
+          <Text style={[styles.feedTitle, { color: colors.text }]}>{post.title}</Text>
+          <Text style={[styles.feedDescription, { color: colors.text }]}>{post.description}</Text>
+          <Text style={[styles.feedAddress, { color: colors.text }]}>{post.address}</Text>
+          <Text style={[styles.feedTimestamp, { color: colors.text }]}>{post.timestamp}</Text>
           <TouchableOpacity style={styles.categoryButton}>
             <Text style={styles.categoryText}>{post.category}</Text>
           </TouchableOpacity>
@@ -110,39 +112,58 @@ const HomeScreen = ({ navigation }) => {
   };
 
   const setActiveScreen = (screen, navButton) => {
-    setActiveNav(navButton); // Update active navigation state
-    navigation.navigate(screen); // Navigate to the screen
+    setActiveNav(navButton);
+    navigation.navigate(screen);
   };
 
   const handleCreatePost = () => {
-    setCreatePostModalVisible(true); // Open modal to create a post
+    setCreatePostModalVisible(true);
   };
 
   if (!fontsLoaded) {
-    return null; // Load font here
+    return null;
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <CreatePostModal
         isVisible={isCreatePostModalVisible}
         onClose={toggleCreatePostModal}
-        onSubmit={addNewPost} // Pass function to add new posts
+        onSubmit={addNewPost}
       />
 
       <Modal
-        visible={isMenuModalVisible} // Use 'visible' instead of 'isVisible'
-        transparent={true} // Optional: makes the background semi-transparent
-        animationType="slide" // Optional: adds slide animation
+        visible={isMenuModalVisible}
+        transparent={true}
+        animationType="slide"
         onRequestClose={toggleMenuModal}
       >
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
+          <View style={[styles.modalContent, { backgroundColor: colors.background }]}>
             <TouchableOpacity onPress={handleSettings}>
-              <Text style={styles.modalText1}>Settings</Text>
+              <Text style={[styles.modalText1, { color: colors.text }]}>Settings</Text>
             </TouchableOpacity>
             <TouchableOpacity onPress={handleLogout}>
-              <Text style={styles.modalText2}>Logout</Text>
+              <Text style={[styles.modalText2, { color: colors.text }]}>Logout</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      <Modal
+        visible={isSettingsModalVisible}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setSettingsModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalContent, { backgroundColor: colors.background }]}>
+            <View style={styles.settingOption}>
+              <Text style={[styles.settingText, { color: colors.text }]}>Dark Mode</Text>
+              <Switch value={isDarkTheme} onValueChange={toggleTheme} />
+            </View>
+            <TouchableOpacity onPress={() => setSettingsModalVisible(false)}>
+              <Text style={[styles.modalText2, { color: colors.text }]}>Close</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -156,22 +177,22 @@ const HomeScreen = ({ navigation }) => {
 
       <View style={styles.headerHead}>
         <Image source={require('../assets/icon.png')} style={styles.headerIcon} />
-        <Text style={[styles.headerTitle]}>Landguard</Text>
-      <TouchableOpacity style={styles.menuIconContainer} onPress={toggleMenuModal}>
-        <MaterialIcons name="menu" size={30} color="#000" />
-      </TouchableOpacity>
-
-      {user && (
-        <TouchableOpacity style={styles.profileIconContainer} onPress={() => navigation.navigate('Profile')}>
-          <Image
-            source={{ uri: user.photoURL || 'https://via.placeholder.com/150' }} // Default image if no photoURL
-            style={styles.profileIcon}
-          />
+        <Text style={[styles.headerTitle, { color: colors.text }]}>RoadGuard</Text>
+        <TouchableOpacity style={styles.menuIconContainer} onPress={toggleMenuModal}>
+          <MaterialIcons name="menu" size={30} color={colors.text} />
         </TouchableOpacity>
-      )}
+
+        {user && (
+          <TouchableOpacity style={styles.profileIconContainer} onPress={() => navigation.navigate('Profile')}>
+            <Image
+              source={{ uri: user.photoURL || 'https://via.placeholder.com/150' }}
+              style={styles.profileIcon}
+            />
+          </TouchableOpacity>
+        )}
       </View>
 
-      <ScrollView style={styles.newsFeedContainer}>
+      <ScrollView style={[styles.newsFeedContainer, { backgroundColor: colors.background }]}>
         {renderNewsFeed()}
       </ScrollView>
 
@@ -189,26 +210,24 @@ const HomeScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#E0E0E0',
     paddingTop: 15,
   },
   createPostButtonContainer: {
     marginTop: 20,
     alignItems: 'center',
   },
-  headerHead:{
+  headerHead: {
     position: 'absolute',
     top: 0,
-    left:0,
+    left: 0,
     right: 0,
     padding: 20,
-    backgroundColor: '#fff',
     height: 120,
     zIndex: -1,
-    shadowColor: '#000', // Color of the shadow
-    shadowOffset: { width: 0, height: 4 }, // Offset for the shadow
-    shadowOpacity: 0.5, // Opacity of the shadow
-    shadowRadius: 4, // Blur radius of the shadow
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.5,
+    shadowRadius: 4,
     elevation: 5,
   },
   headerIcon: {
@@ -221,14 +240,13 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     borderWidth: 0.5,
     borderColor: '#7C7A7A',
-    shadowColor: '#000', // Color of the shadow
-    shadowOffset: { width: 0, height: 4 }, // Offset for the shadow
-    shadowOpacity: 0.5, // Opacity of the shadow
-    shadowRadius: 4, // Blur radius of the shadow
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.5,
+    shadowRadius: 4,
   },
   headerTitle: {
     fontSize: 25,
-    color: '#000',
     fontWeight: 'bold',
     position: 'absolute',
     top: 65,
@@ -253,13 +271,12 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.25)', // semi-transparent background
+    backgroundColor: 'rgba(0, 0, 0, 0.25)',
   },
   modalContent: {
-    backgroundColor: 0,
     padding: 50,
     borderRadius: 10,
-    width: '100%', // Width adjustment to fit within the overlay
+    width: '80%',
     textAlign: 'center',
     justifyContent: 'center',
     alignContent: 'center',
@@ -284,7 +301,6 @@ const styles = StyleSheet.create({
     color: '#fff',
   },
   newsFeedContainer: {
-    backgroundColor: '#fff',
     borderWidth: 1,
     borderColor: '#545151',
     borderRadius: 10,
@@ -305,24 +321,24 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
     marginBottom: 5,
-    fontFamily: 'Poppins', // Apply Poppins font
+    fontFamily: 'Poppins',
   },
   feedDescription: {
     fontSize: 14,
     marginBottom: 5,
-    fontFamily: 'Poppins', // Apply Poppins font
+    fontFamily: 'Poppins',
   },
   feedAddress: {
     fontSize: 12,
     marginBottom: 5,
     fontStyle: 'italic',
-    fontFamily: 'Poppins', // Apply Poppins font
+    fontFamily: 'Poppins',
   },
   feedTimestamp: {
     fontSize: 12,
     marginBottom: 5,
     color: '#777',
-    fontFamily: 'Poppins', // Apply Poppins font
+    fontFamily: 'Poppins',
   },
   categoryButton: {
     backgroundColor: '#007AFF',
@@ -335,7 +351,7 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 12,
     fontWeight: 'bold',
-    fontFamily: 'Poppins', // Apply Poppins font
+    fontFamily: 'Poppins',
   },
   createPostButton: {
     position: 'absolute',
@@ -348,16 +364,26 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     width: '35%',
     textAlign: 'center',
-    shadowColor: '#000', // Color of the shadow
-    shadowOffset: { width: 0, height: 4 }, // Offset for the shadow
-    shadowOpacity: 0.5, // Opacity of the shadow
-    shadowRadius: 4, // Blur radius of the shadow
-    elevation: 5, // Elevation for Android to support shadow on some devices
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.5,
+    shadowRadius: 4,
+    elevation: 5,
   },
   createPostText: {
     color: '#000',
     fontSize: 12,
     fontWeight: 'bold',
+  },
+  settingOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    width: '100%',
+    paddingVertical: 10,
+  },
+  settingText: {
+    fontSize: 18,
   },
 });
 
